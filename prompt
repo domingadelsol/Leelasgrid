@@ -1,0 +1,96 @@
+# Prompt: Leela's Grid
+
+Crea una aplicación web de dibujo pixelado en un único archivo `index.html`, lista para subir a GitHub Pages. Sin dependencias externas salvo Google Fonts.
+
+---
+
+## Concepto
+
+Lienzo de dibujo basado en una grilla de celdas de **8×8 píxeles** que ocupa el 100% del viewport (ancho y alto del dispositivo). El usuario pinta arrastrando el mouse o el dedo. La grilla es el fondo completo de la página, sin márgenes ni scroll.
+
+---
+
+## Tecnología
+
+- HTML5 + CSS3 + JavaScript vanilla
+- El lienzo es un `<canvas>` fijo que cubre todo el viewport
+- Las celdas pintadas se guardan en un `Map` con clave `"col,row"` (no índice numérico), para que el dibujo sobreviva rotaciones y cambios de tamaño de pantalla
+- Al hacer resize o rotar el dispositivo, el canvas se recalcula y redibuja desde el mapa sin perder nada
+
+---
+
+## Estética: Bauhaus
+
+- Tipografía: **Space Grotesk** (Google Fonts), bold, uppercase, letter-spacing amplio
+- Paleta: fondo marfil `#F2F0EB` / negro `#111110` / rojo acento `#D62828`
+- Header con **barra vertical izquierda de 5px en rojo** y **borde inferior de 3px negro** (constructivismo)
+- Botones **sin border-radius** (rectangulares), borde 2px sólido, fondo transparente, hover invierte colores
+- Swatch de color **cuadrado** (no círculo), con cuadrado interior decorativo semitransparente
+- Punto decorativo rojo antes del título `h1`
+- Dark mode: fondo `#111110`, texto `#F2F0EB`, borde acento `#E84040`
+
+---
+
+## Header flotante
+
+Posición `fixed`, backdrop-filter blur, flex-wrap para mobile. Contiene:
+
+1. **Título** — `Leela's Grid`
+2. **Swatch cuadrado de color** — muestra el color activo; 1 clic/toque = siguiente color; 2 clics/toques rápidos (< 350 ms) = avanza 2 colores. Flash de outline rojo al cambiar.
+3. **Botón ☾ Dark / ☀ Light** — alterna light/dark mode
+4. **Botón ⌫ Löschen** — borrador toggle: al activarse queda "presionado" visualmente (`aria-pressed="true"`, fondo negro, punto rojo debajo); al volver a pulsar se desactiva
+5. **Botón Neu** — limpia todo el lienzo
+
+---
+
+## Paleta de colores (12 colores, arcoíris + negro + blanco)
+
+```
+rojo #e63946 · naranja-rojo #f4631e · naranja #f4a819 · amarillo #f7d117
+verde-lima #5ec42a · verde #26a96c · teal #17c3b2 · azul cielo #1a8fe3
+azul #3d5af1 · violeta #9b5de5 · negro #111111 · blanco #ffffff
+```
+
+Ciclo circular: al llegar al último vuelve al primero.
+
+---
+
+## Interacción con el lienzo
+
+| Acción | Resultado |
+|---|---|
+| Arrastrar mouse / dedo | Pinta celdas con el color activo |
+| Alt sostenido + arrastrar | Pincel grueso 2×2 celdas (también funciona con borrador) |
+| Borrador activo + arrastrar | Borra celdas (restaura color de fondo) |
+| Flechas del teclado (foco en canvas) | Mueve cursor celda a celda |
+| Enter / Espacio (foco en canvas) | Pinta/borra la celda actual |
+| Escape | Quita el foco del canvas |
+
+---
+
+## Responsividad
+
+- `min-width: 300px` en `body`
+- Header con `flex-wrap` — los botones bajan a segunda línea si no caben
+- Tamaños de fuente con `clamp()` para escalar con el viewport
+- Breakpoint `@media (max-width: 400px)` para pantallas muy chicas
+- Touch: eventos `touchstart`, `touchmove`, `touchend` con `e.preventDefault()` y `passive: false` para evitar scroll accidental
+
+---
+
+## Accesibilidad WCAG 2.2
+
+- Área táctil mínima **44×44px** en todos los controles (criterio 2.5.5)
+- `role="toolbar"` + navegación con teclas ← → entre controles
+- `role="application"` + `aria-label` descriptivo en el canvas
+- `aria-pressed` en botones toggle (Löschen, Dark)
+- `aria-label` dinámico en el swatch (incluye nombre del color activo)
+- `role="status"` + `aria-live="polite"` para anunciar acciones a lectores de pantalla (color cambiado, borrador on/off, lienzo limpiado, celda pintada)
+- `focus-visible` con outline 3px en `#0057b8` (claro) / `#58a6ff` (oscuro)
+- `@media (prefers-reduced-motion: reduce)` desactiva todas las transiciones
+
+---
+
+## Persistencia del dibujo entre resizes
+
+Las celdas se guardan como `Map<"col,row", paletteIndex>`. Al rotar el dispositivo o cambiar el tamaño de ventana, el canvas se limpia y se redibuja desde el mapa — el dibujo nunca se pierde. El resize usa `onResize()` llamado inmediatamente + debounce de 150 ms para el redibujado final.
