@@ -242,10 +242,6 @@
       ☾ Dark
     </button>
 
-    <button id="btn-erase" aria-pressed="false" aria-label="Activar borrador">
-      ⌫ Löschen
-    </button>
-
     <button id="btn-clear" aria-label="Limpiar todo el lienzo">
       Neu
     </button>
@@ -275,7 +271,6 @@
   let isPainting = false;
   let lastCell   = null;
   let altHeld    = false;
-  let isErasing  = false;
 
   const painted = new Map();
 
@@ -283,7 +278,6 @@
   const ctx          = canvas.getContext('2d');
   const btnTheme     = document.getElementById('btn-theme');
   const btnClear     = document.getElementById('btn-clear');
-  const btnErase     = document.getElementById('btn-erase');
   const colorPreview = document.getElementById('color-preview');
   const srLive       = document.getElementById('sr-live');
 
@@ -344,7 +338,7 @@
     e.preventDefault();
   });
 
-  const toolbarItems = [colorPreview, btnTheme, btnErase, btnClear];
+  const toolbarItems = [colorPreview, btnTheme, btnClear];
   toolbarItems.forEach((el, i) => {
     el.addEventListener('keydown', e => {
       if (e.key === 'ArrowRight') { e.preventDefault(); toolbarItems[(i + 1) % toolbarItems.length].focus(); }
@@ -397,15 +391,14 @@
       for (let dr = 0; dr < 2; dr++) for (let dc = 0; dc < 2; dc++) {
         const c = col + dc, r = row + dr;
         if (c >= COLS || r >= ROWS) continue;
-        const ki = key(c, r);
-        if (isErasing) painted.delete(ki); else painted.set(ki, colorIndex);
+        painted.set(key(c, r), colorIndex);
         drawCell(c, r);
       }
       lastCell = k;
     } else {
       if (k === lastCell) return;
       lastCell = k;
-      if (isErasing) painted.delete(k); else painted.set(k, colorIndex);
+      painted.set(k, colorIndex);
       drawCell(col, row);
     }
   }
@@ -419,10 +412,9 @@
     else if (e.key === 'ArrowUp')    { e.preventDefault(); focusRow = Math.max(focusRow - step, 0); }
     else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      const k = key(focusCol, focusRow);
-      if (isErasing) painted.delete(k); else painted.set(k, colorIndex);
+      painted.set(key(focusCol, focusRow), colorIndex);
       drawCell(focusCol, focusRow);
-      announce(`Celda ${focusCol},${focusRow} ${isErasing ? 'borrada' : 'pintada de ' + curName()}`);
+      announce(`Celda ${focusCol},${focusRow} pintada de ${curName()}`);
     }
     else if (e.key === 'Escape') { canvas.blur(); }
   });
@@ -431,7 +423,7 @@
     if (e.code === 'AltLeft' || e.code === 'AltRight') { e.preventDefault(); altHeld = true; canvas.style.cursor = 'cell'; }
   });
   window.addEventListener('keyup', e => {
-    if (e.code === 'AltLeft' || e.code === 'AltRight') { altHeld = false; canvas.style.cursor = isErasing ? 'cell' : 'crosshair'; }
+    if (e.code === 'AltLeft' || e.code === 'AltRight') { altHeld = false; canvas.style.cursor = 'crosshair'; }
   });
 
   canvas.addEventListener('mousedown', e => {
@@ -460,14 +452,6 @@
     btnTheme.textContent = isDark ? '☀ Light' : '☾ Dark';
     drawAll();
     announce(isDark ? 'Modo oscuro activado' : 'Modo claro activado');
-  });
-
-  btnErase.addEventListener('click', () => {
-    isErasing = !isErasing;
-    btnErase.setAttribute('aria-pressed', isErasing);
-    btnErase.setAttribute('aria-label', isErasing ? 'Desactivar borrador' : 'Activar borrador');
-    canvas.style.cursor = isErasing ? 'cell' : 'crosshair';
-    announce(isErasing ? 'Borrador activado' : 'Borrador desactivado');
   });
 
   btnClear.addEventListener('click', () => { painted.clear(); drawAll(); announce('Lienzo limpiado'); });
